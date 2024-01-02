@@ -1,11 +1,11 @@
-STATIC_ZERO_bit_mode equ 32
-STATIC_ZERO_address equ 0x7C00
-STATIC_ZERO_stack equ 0x8000
-STATIC_ZERO_magic equ 0xAA55
-STATIC_ZERO_kernel_address equ 0x1000
-STATIC_ZERO_multiboot_header equ 0x0500
-STATIC_ZERO_ERROR_memory equ 0x4F4D
-STATIC_ZERO_ERROR_device equ 0x4F44
+STATIC_AIDEN_bit_mode equ 32
+STATIC_AIDEN_address equ 0x7C00
+STATIC_AIDEN_stack equ 0x8000
+STATIC_AIDEN_magic equ 0xAA55
+STATIC_AIDEN_kernel_address equ 0x1000
+STATIC_AIDEN_multiboot_header equ 0x0500
+STATIC_AIDEN_ERROR_memory equ 0x4F4D
+STATIC_AIDEN_ERROR_device equ 0x4F44
 
 STATIC_EMPTY equ 0x00
 STATIC_FALSE equ 0x01
