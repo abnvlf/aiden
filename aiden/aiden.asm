@@ -187,7 +187,7 @@ aiden_header_gdt_64_bit:
     dd aiden_table_gdt_64bit
 
 times 510 - ($ - $$) db STATIC_EMPTY
-                    db STATIC_AIDEN_magic
+                    dw STATIC_AIDEN_magic
 
 file_kernel:
     incbin "build/kernel"

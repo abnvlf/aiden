@@ -7,7 +7,7 @@ struc KERNEL_INIT_MEMORY_MULTIBOOT_HEADER
     .mmap_addr resb 4
 endstruc
 
-struct KERNEL_INIT_MEMORY_MULTIBOOT_STRUCTURE_MEMORY_MAP
+struc KERNEL_INIT_MEMORY_MULTIBOOT_STRUCTURE_MEMORY_MAP
     .size resb 4
     .address resb 8
     .limit resb 8
@@ -35,33 +35,32 @@ kernel_init_memory:
     call kernel_panic
 
 .found:
-    xchg bx, bx
     mov rcx, qword [rbx + KERNEL_INIT_MEMORY_MULTIBOOT_STRUCTURE_MEMORY_MAP.limit]
     shr rcx, STATIC_DIVIDE_BY_PAGE_shift
-    
-    mov qword [kernel_page_total_mirror], rcx
+
+    mov qword [kernel_page_total_count], rcx
     mov qword [kernel_page_free_count], rcx
 
     mov rdi, kernel_end
     call library_page_align_up
 
     mov qword [kernel_memory_map_address], rdi
-
     shr rcx, STATIC_DIVIDE_BY_8_shift
-    push rcx
 
+    push rcx
     call library_page_from_size
     call kernel_page_drain_few
 
     pop rcx
+
     mov al, STATIC_MAX_unsigned
     rep stosb
-
-    mov qword [kernel_memory_map_address_end], rdi
     
+    mov qword [kernel_memory_map_address_end], rdi
+
     call library_page_align_up
     sub rdi, KERNEL_BASE_address
     shr rdi, STATIC_DIVIDE_BY_PAGE_shift
 
     mov rcx, rdi
-    call kernel_memory_alloc_space_internal
+    call kernel_memory_alloc

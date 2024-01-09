@@ -102,7 +102,7 @@ STATIC_COLOR_green equ 2
 STATIC_COLOR_cyan equ 3
 STATIC_COLOR_red equ 4
 STATIC_COLOR_magenta equ 5
-STATIC_COLOR_browne equ	6
+STATIC_COLOR_brown equ	6
 STATIC_COLOR_gray_light	equ 7
 STATIC_COLOR_gray equ 8
 STATIC_COLOR_blue_light equ	9

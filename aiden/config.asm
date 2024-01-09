@@ -30,3 +30,9 @@ struct STATIC_MULTIBOOT_header
     .mmmap_length resb 4
     .mmap_addr resb 4
 endstruc
+
+DRIVER_PIT_PORT_command equ 0x0043
+DRIVER_PIT_COMMAND_access_low_high equ 00110000b
+
+DRIVER_PIC_PORT_MASTER_data equ 0x0021
+DRIVER_PIC_PORT_SLAVE_data equ 0x00A1

@@ -5,42 +5,44 @@
 
 [ORG KERNEL_BASE_address]
 
-_start:
-    mov dword [header], "AIDEN"
-    jmp init
-
-HEADER_MAGIC equ 0x1BADB002
-
-HEADER_FLAG_align equ 1 << 0
-HEADER_FLAG_memory_map equ 1 << 1
-HEADER_FLAG_header equ 1 << 16
-HEADER_FLAG_default equ HEADER_FLAG_align | HEADER_FLAG_memory_map | HEADER_FLAG_header
-
-HEADER_CHECKSUM equ -(HEADER_FLAG_default + HEADER_MAGIC)
-
-align 0x04
-header:
-    dd HEADER_MAGIC
-    dd HEADER_FLAG_default
-    dd HEADER_CHECKSUM
-    dd header
-    dd _start
-    dd STATIC_EMPTY
-    dd STATIC_EMPTY
-    dd init
-align 0x10
-header_end:
-
 init:
     %include "kernel/init.asm"
 
+align KERNEL_PAGE_SIZE_byte, db STATIC_NOTHING
 kernel:
-    jmp $
-    %include "kernel/macro/close.asm"
-    %include "kernel/panic.asm"
-    %include "kernel/memory.asm"
-    %include "library/page_align_up.asm"
+    jmp service_http
 
+    %include "kernel/macro/close.asm"
+    %include "kernel/macro/apic.asm"
+    %include "kernel/macro/debug.asm"
+
+    %include "kernel/panic.asm"
+    %include "kernel/page.asm"
+    %include "kernel/memory.asm"
+    %include "kernel/video.asm"
+    %include "kernel/apic.asm"
+    %include "kernel/io_apic.asm"
+    %include "kernel/data.asm"
+    %include "kernel/idt.asm"
+	%include "kernel/task.asm"
+	%include "kernel/network.asm"
+	%include "kernel/thread.asm"
+
+    %include "kernel/driver/rtc.asm"
+    %include "kernel/driver/ps2.asm"
+    %include "kernel/driver/pci.asm"
+    %include "kernel/driver/network/i82540em.asm"
+
+    %include "kernel/service/tresher.asm"
+    %include "kernel/service/shell.asm"
+    %include "kernel/service/http.asm"
+    %include "kernel/service/tx.asm"
+    
+    %include "library/input.asm"
     %include "library/page_align_up.asm"
     %include "library/page_from_size.asm"
+    %include "library/string_compare.asm"
+    %include "library/string_trim.asm"
+    %include "library/string_word_next.asm"
+    
 kernel_end:
