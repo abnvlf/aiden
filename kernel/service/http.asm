@@ -4,6 +4,7 @@
 %MACRO service_http_macro_foot 0
     db "<hr/>", STATIC_ASCII_NEW_LINE
     db "aiden v", KERNEL_version, ".", KERNEL_revision, " (HTTP Service v", SERVICE_HTTP_version, ".", SERVICE_HTTP_revision, ")"
+    db "<style> * { font: 12px/150% 'Courier New', 'DejaVu Sans Mono', Monospace, Verdana; }</style>", STATIC_ASCII_NEW_LINE
 %ENDMACRO
 
 service_http:
@@ -32,7 +33,9 @@ service_http:
 
 .answer:
     call kernel_network_tcp_port_send
-    jmp $
+    pop rdi
+    call kernel_memory_release_page
+    jmp .loop
 
 service_http_get_root db "GET / "
 service_http_get_root_end:
@@ -40,7 +43,6 @@ service_http_get_root_end:
 service_http_200_default    db "HTTP/1.0 200 OK", STATIC_ASCII_NEW_LINE
                             db "content-type: text/html", STATIC_ASCII_NEW_LINE
                             db STATIC_ASCII_NEW_LINE
-                            db "<style> * {font: 12px/150%} 'Courier New', Monospace, Verdana; }</style>", STATIC_ASCII_NEW_LINE
                             db "seketika admin murka >:(", STATIC_ASCII_NEW_LINE
                             service_http_macro_foot
 service_http_200_default_end:

@@ -37,7 +37,7 @@ KERNEL_NETWORK_FRAME_ICMP_TYPE_REQUEST		equ	0x08
 KERNEL_NETWORK_FRAME_ICMP_TYPE_REPLY		equ	0x00
 
 
-KERNEL_NETWORK_FRAME_TCP_HEADER_LENGTH_default	equ	0x40
+KERNEL_NETWORK_FRAME_TCP_HEADER_LENGTH_default	equ	0x50
 KERNEL_NETWORK_FRAME_TCP_FLAGS_fin		equ	0000000000000001b
 KERNEL_NETWORK_FRAME_TCP_FLAGS_syn		equ	0000000000000010b
 KERNEL_NETWORK_FRAME_TCP_FLAGS_rst		equ	0000000000000100b
@@ -186,12 +186,51 @@ kernel_network:
 	macro_debug	"kernel_network"
 
 kernel_network_tcp_port_send:
-	xchg bx,bx
-	jmp	$
+	push rax
+	push rbx
+	push rcx
+	push rsi
+	push rdi
+
+	call kernel_memory_alloc_page
+	jc .end
+
+	push rcx
+	push rdi
+
+	add rdi, KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE
+	rep movsb
+
+	pop rdi
+	pop rcx
+
+	inc qword [rbx + KERNEL_NETWORK_STRUCTURE_TCP_STACK.host_sequence]
+	mov byte [rbx + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags], KERNEL_NETWORK_FRAME_TCP_FLAGS_psh | KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+
+	add rcx, KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + 0x01
+	mov rsi, rbx
+	mov bl, KERNEL_NETWORK_FRAME_TCP_HEADER_LENGTH_default
+	call kernel_network_tcp_wrap
+
+	mov rax, rcx
+	add rax, KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE
+	call service_tx_add
+
+.end:
+	pop rdi
+	pop rsi
+	pop rcx
+	pop rbx
+	pop rax
+
+	ret
 
 kernel_network_ip:
 	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_ICMP
 	je	kernel_network_icmp
+
+	cmp byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol], KERNEL_NETWORK_FRAME_IP_PROTOCOL_TCP
+	je kernel_network_tcp
 
 .end:
 	jmp	kernel_network.end
@@ -327,9 +366,9 @@ kernel_network_tcp_fin:
 
 	mov	bl,	(KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE >> STATIC_DIVIDE_BY_4_shift) << STATIC_MOVE_AL_HALF_TO_HIGH_shift
 	mov	ecx,	KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE
-	call	kernel_network_tcp_wrap
+	call kernel_network_tcp_wrap
 	mov	ax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
-	call	driver_nic_i82540em_transfer
+	call service_tx_add
 
 	jmp	.end
 
@@ -481,20 +520,14 @@ kernel_network_tcp_syn:
 	call kernel_network_tcp_wrap
 
 	mov	ax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
-	call driver_nic_i82540em_transfer
-
-	jmp	.end
+	call service_tx_add
 
 .error:
-	mov	byte [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.status],	STATIC_EMPTY
+	pop rdi
 
 .end:
-	pop	rdi
-	pop	rsi
-	pop	rcx
-	pop	rbx
 	pop	rax
-
+	
 	jmp	kernel_network_tcp.end
 
 	macro_debug	"kernel_network_tcp_syn"
