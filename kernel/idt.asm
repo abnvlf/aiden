@@ -32,7 +32,7 @@ kernel_idt_update:
     mov ax, KERNEL_STRUCTURE_GDT.cs_ring0
     stosw
 
-    mov ax, bw
+    mov ax, bx
     stosw
     
     mov rax, qword [rsp]
