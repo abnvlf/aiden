@@ -39,7 +39,7 @@ library_input:
     inc rbx
 
     dec rcx
-x
+
 .print:
     push rcx
 

@@ -241,7 +241,7 @@ kernel_video_string:
 .yellow:
     mov rdi, kernel_video_color_sequence_yellow
     call library_string_compare
-    jc .while
+    jc .white
 
     mov byte [kernel_video_char_color_and_background], STATIC_COLOR_yellow
     jmp .done
@@ -290,7 +290,7 @@ kernel_video_char:
     push rdi
 
     mov ah, byte [kernel_video_char_color_and_background]
-    mov ebx, dword [kernel_vide_cursor]
+    mov ebx, dword [kernel_video_cursor]
     mov edx, dword [kernel_video_cursor + STATIC_DWORD_SIZE_byte]
     mov rdi, qword [kernel_video_pointer]
 
@@ -311,7 +311,7 @@ kernel_video_char:
     inc edx
 
 .row:
-    cmp edx, KERNEL_VIDEO_char
+    cmp edx, KERNEL_VIDEO_HEIGHT_char
     jb .continue
 
     dec edx
@@ -325,7 +325,7 @@ kernel_video_char:
     mov dword [kernel_video_cursor], ebx
     mov dword [kernel_video_cursor + STATIC_DWORD_SIZE_byte], edx
 
-    mov dword [kernel_video_pointer], rdi
+    mov qword [kernel_video_pointer], rdi
 
     call kernel_video_cursor_set
     pop rdi

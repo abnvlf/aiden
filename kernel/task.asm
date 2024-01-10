@@ -73,7 +73,7 @@ kernel_task:
     mov rsi, qword [kernel_task_active_list]
     mov rdi, qword [rsi + rbx]
 
-    mov rbp, KERNEL_TASK_pointer
+    mov rbp, KERNEL_STACK_pointer
     FXSAVE64 [rbp]
 
     mov qword [rdi + KERNEL_STRUCTURE_TASK.rsp], rsp

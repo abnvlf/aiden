@@ -57,7 +57,7 @@ driver_rtc_get_date_and_time:
     mov byte [driver_rtc_time + DRIVER_RTC_STRUCTURE_TIME.second], al
     
     mov al, DRIVER_RTC_PORT_minute
-    out DRIVER_PORT_command, al
+    out DRIVER_RTC_PORT_command, al
     in al, DRIVER_RTC_PORT_data
     mov byte [driver_rtc_time + DRIVER_RTC_STRUCTURE_TIME.minute], al
     

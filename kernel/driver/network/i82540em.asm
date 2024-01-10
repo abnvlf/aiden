@@ -185,7 +185,7 @@ driver_nic_i82540em_mmio_base_address dq STATIC_EMPTY
 driver_nic_i82540em_irq_number db STATIC_EMPTY
 driver_nic_i82540em_rx_base_address dq STATIC_EMPTY
 driver_nic_i82540em_tx_base_address dq STATIC_EMPTY
-driver_nic_i28540em_mac_address dq STATIC_EMPTY
+driver_nic_i82540em_mac_address dq STATIC_EMPTY
 
 driver_nic_i82540em_tx_queue_empty_semaphore db STATIC_TRUE
 driver_nic_i82540em_promiscious_node_semaphore db STATIC_TRUE
@@ -263,7 +263,7 @@ driver_nic_i82540em_irq:
     mov byte [driver_nic_i82540em_tx_queue_empty_semaphore], STATIC_TRUE
 
 .tx_not_empty:
-    bt eax, DRIVER_NIC_I82540EM_ICR_RX0
+    bt eax, DRIVER_NIC_I82540EM_ICR_RXO
     jnc .end
 
     xchg bx, bx
@@ -281,7 +281,7 @@ driver_nic_i82540em_irq:
     cmp byte [driver_nic_i82540em_promiscious_node_semaphore], STATIC_TRUE
     je .receive
 
-    mov eax, dword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.target + KERNEL_NETWORK_STRUCTUR_MAC.2]
+    mov eax, dword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.target + KERNEL_NETWORK_STRUCTURE_MAC.2]
     shl rax, STATIC_MOVE_AX_TO_HIGH_shift
     or ax, word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.target]
 
@@ -340,7 +340,7 @@ driver_nic_i82540em:
 
     mov rsi, rax
     mov eax, DRIVER_PCI_REGISTER_irq
-    call driver_pic_read
+    call driver_pci_read
     
     mov byte [driver_nic_i82540em_irq_number], al
     mov rax, qword [driver_nic_i82540em_mmio_base_address]
@@ -409,7 +409,7 @@ driver_nic_i82540em_setup:
     call kernel_page_drain
     
     mov qword [driver_nic_i82540em_tx_base_address], rdi
-    mov qword [rsi + DRIVER_NIC_I82540EM_TDBAL], edi
+    mov dword [rsi + DRIVER_NIC_I82540EM_TDBAL], edi
     shr rdi, STATIC_MOVE_HIGH_TO_EAX_shift
     mov dword [rsi + DRIVER_NIC_I82540EM_TDBAH], edi
 
@@ -429,7 +429,7 @@ driver_nic_i82540em_setup:
     or eax, DRIVER_NIC_I82540EM_TIPG_IPGR2_DEFAULT
     mov dword [rsi + DRIVER_NIC_I82540EM_TIPG], eax
 
-    mov eax, dword [rsi + DRIVEr_NIC_I82540EM_CTRL]
+    mov eax, dword [rsi + DRIVER_NIC_I82540EM_CTRL]
     or eax, DRIVER_NIC_I82540EM_CTRL_SLU
     or eax, DRIVER_NIC_I82540EM_CTRL_ASDE
     and rax, ~DRIVER_NIC_I82540EM_CTRL_LRST

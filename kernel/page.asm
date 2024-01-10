@@ -19,6 +19,14 @@ kernel_page_free_count dq STATIC_EMPTY
 kernel_page_reserved_count dq STATIC_EMPTY
 kernel_page_paged_count dq STATIC_EMPTY
 
+kernel_page_purge:
+    push rbx
+    push rcx
+    push rdi
+
+    mov bl, 0x04
+    mov rdi, r11
+
 kernel_page_drain:
     push rcx
     mov rcx, KERNEL_PAGE_SIZE_byte

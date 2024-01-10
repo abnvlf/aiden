@@ -30,7 +30,7 @@ library_string_word_next:
 
 .count:
     cmp byte [rsi], STATIC_ASCII_TERMINATOR
-    jne .prefix_ready
+    jne .ready
     
     cmp byte [rsi], STATIC_ASCII_NEW_LINE
     je .ready

@@ -33,7 +33,7 @@ kernel_thread_exec:
 
     mov rax, KERNEL_STACK_pointer
 
-    mov rax, KERNE_STRUCTURE_GDT.ds_ring0
+    mov rax, KERNEL_STRUCTURE_GDT.ds_ring0
     stosq
 
     mov qword [rdi - STATIC_QWORD_SIZE_byte * 0x0B], rsi

@@ -30,7 +30,7 @@ aiden:
     int 0x10
 
     mov ah, 0x42
-    mov si, aiden_table_disk_address_pocket
+    mov si, aiden_table_disk_address_packet
     int 0x13
 
     mov si, STATIC_AIDEN_ERROR_device
@@ -57,7 +57,7 @@ aiden:
     jnz .memory
 
     mov al, 0xFF
-    out DRIVER_PIC_SLAVE_data, al
+    out DRIVER_PIC_PORT_SLAVE_data, al
     out DRIVER_PIC_PORT_MASTER_data, al
 
     cli
@@ -70,11 +70,11 @@ aiden:
     mov ebx, STATIC_AIDEN_memory_map
     jmp STATIC_AIDEN_kernel_address:0x0000
 %endif
-    lgdt [AIDEN_header_gdt_32bit]
+    lgdt [aiden_header_gdt_32bit]
     mov eax, cr0
     bts eax, 0
     mov cr0, eax
-    jmp long 0x0008: AIDEN_protected_node
+    jmp long 0x0008: aiden_protected_mode
 
 aiden_panic:
     mov ax, 0xB800
@@ -84,7 +84,7 @@ aiden_panic:
     jmp $
 
 [BITS 32]
-AIDEN_protected_mode:
+aiden_protected_mode:
     mov ax, 0x10
     mov ds, ax
     mov es, ax
@@ -102,7 +102,7 @@ AIDEN_protected_mode:
     mov edi, STATIC_AIDEN_kernel_address << STATIC_SEGMENT_to_pointer << STATIC_SEGMENT_to_pointer
     rep movsd
 
-%if STATIC_ZERO_bit_mode = 32
+%if STATIC_AIDEN_bit_mode = 32
     mov ebx, STATIC_AIDEN_multiboot_header
     jmp STATIC_AIDEN_kernel_address << STATIC_SEGMENT_to_pointer << STATIC_SEGMENT_to_pointer
 %endif

@@ -10,7 +10,7 @@ struc SERVICE_TX_STRUCTURE_CACHE
 endstruc
 
 service_tx:
-    mov rcx, SERVICE_CACHE_SIZE_page
+    mov rcx, SERVICE_TX_CACHE_SIZE_page
     call kernel_memory_alloc
     jc service_tx
     call kernel_page_drain_few
@@ -35,7 +35,7 @@ service_tx:
 
     call kernel_memory_release_page
     mov rdi, rsi
-    add rsi, SERIVCE_TX_STRUCTURE_CACHE.SIZE
+    add rsi, SERVICE_TX_STRUCTURE_CACHE.SIZE
     
     mov rcx, ((SERVICE_TX_CACHE_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift) / SERVICE_TX_STRUCTURE_CACHE.SIZE) - 0x01
     sub rcx, qword [service_tx_cache_pointer]
@@ -66,7 +66,7 @@ service_tx_add:
     add rsi, qword [service_tx_cache_address]
 
     mov dword [rsi + SERVICE_TX_STRUCTURE_CACHE.size], eax
-    mov dword [rsi + SERVICE_TX_STRUCTURE_CACHE.address], rdi
+    mov qword [rsi + SERVICE_TX_STRUCTURE_CACHE.address], rdi
 
     dec qword [service_tx_cache_pointer]
 

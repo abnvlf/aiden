@@ -3,6 +3,7 @@ STATIC_AIDEN_address equ 0x7C00
 STATIC_AIDEN_stack equ 0x8000
 STATIC_AIDEN_magic equ 0xAA55
 STATIC_AIDEN_kernel_address equ 0x1000
+STATIC_AIDEN_memory_map equ 0x1000
 STATIC_AIDEN_multiboot_header equ 0x0500
 STATIC_AIDEN_ERROR_memory equ 0x4F4D
 STATIC_AIDEN_ERROR_device equ 0x4F44
@@ -24,10 +25,10 @@ STATIC_PAGE_FLAG_default equ STATIC_PAGE_FLAG_available | STATIC_PAGE_FLAG_write
 
 STATIC_MULTIBOOT_HEADER_FLAG_memory_map equ 01000000b
 
-struct STATIC_MULTIBOOT_header
+struc STATIC_MULTIBOOT_header
     .flags resb 4
     .unsupported resb 40
-    .mmmap_length resb 4
+    .mmap_length resb 4
     .mmap_addr resb 4
 endstruc
 

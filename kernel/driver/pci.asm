@@ -75,7 +75,7 @@ driver_pci_find_class_and_subclass:
     mov eax, DRIVER_PCI_REGISTER_class_and_subclass
     call driver_pci_read
     
-    shr eax, STATIC_MOV_HIGH_TO_AX_shift
+    shr eax, STATIC_MOVE_HIGH_TO_AX_shift
 
     cmp ax, word [rsp]
     je .found

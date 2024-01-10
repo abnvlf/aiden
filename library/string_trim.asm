@@ -46,7 +46,7 @@ library_string_trim:
     sub rsi, rcx
 
     mov qword [rsp], rsi
-    mov dword [rsp + STATIC_QWORD_SIZE_byte], rcx
+    mov qword [rsp + STATIC_QWORD_SIZE_byte], rcx
 
     clc
     jmp .end

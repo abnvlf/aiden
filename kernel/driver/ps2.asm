@@ -390,7 +390,7 @@ driver_ps2_keyboard:
     mov ax, word [rsi + rax * STATIC_WORD_SIZE_byte]
     
     add al, DRIVER_PS2_KEYBOARD_key_release
-    jmp .leave
+    jmp .save
 
 .inside:
     mov ax, word [rsi + rax * STATIC_WORD_SIZE_byte]
@@ -412,7 +412,7 @@ driver_ps2_keyboard_shift:
     je .press_left
     cmp ax, DRIVER_PS2_KEYBOARD_PRESS_SHIFT_RIGHT
     je .press_right
-    cmp ax, DRIVER_PS2_KEYBOARd_RELEASE_SHIFT_LEFT
+    cmp ax, DRIVER_PS2_KEYBOARD_RELEASE_SHIFT_LEFT
     je .release_left
     cmp ax, DRIVER_PS2_KEYBOARD_RELEASE_SHIFT_RIGHT
     je .release_right
@@ -438,7 +438,7 @@ driver_ps2_keyboard_shift:
     jmp .change
 
 .release_left:
-    mov byte [driver_ps2_keyboard_shift_left_semaphore], STATIC_LEFT
+    mov byte [driver_ps2_keyboard_shift_left_semaphore], STATIC_FALSE
     jmp .change
 
 .release_right:
@@ -510,6 +510,11 @@ driver_ps2_check_write:
     jnz .loop
     pop rax
     ret
+
+driver_ps2_receive_answer:
+	call driver_ps2_check_read
+	in al, DRIVER_PS2_PORT_DATA
+	ret
 
 driver_ps2_check_read:
     push rax

@@ -1,4 +1,4 @@
-%define SERVICE_HTPP_version "1"
+%define SERVICE_HTTP_version "1"
 %define SERVICE_HTTP_revision "0"
 
 %MACRO service_http_macro_foot 0
