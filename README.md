@@ -1,4 +1,5 @@
-# aiden
+![image](.github/aiden.png)
+
 multitask operating system with x86_64 asm
 
 ## requirements
