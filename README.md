@@ -1,13 +1,13 @@
 ![image](.github/aiden.png)
 
-multitask operating system with x86_64 asm
+Multitask Operating System with x86_64 ASM.
 
-## requirements
+## Requirements
 
-minimum specification for aiden kernel
-- 2 kib of memory
+The minimum specification for the Aiden kernel is:
+- 2 KiB of memory
 
-## running and compile
+## Running and Compile
 
 ```shell
 git clone https://github.com/slowy07/aiden
@@ -18,9 +18,9 @@ nasm -f bin kernel/kernel.asm -o build/kernel
 nasm -f bin aiden/aiden.asm -o build/aiden.raw
 ```
 
-## testing on qemu
+## Testing on QEMU
 
-qemu are used cause can run any platform, and for the develop and test the aiden
+QEMU is used because it can run on any platform, and it is employed for the development and testing of Aiden.
 ```shell
 qemu-system-x86_64 -drive file=build/aiden.raw,media=disk,format=raw -m 2 -smp 1 -rtc base=localtime
 ```
