@@ -1,6 +1,6 @@
 ![image](.github/aiden.png)
 
-Multitask operating system with x86_64 ASM.
+Multitask Operating System with x86_64 ASM.
 
 ## Requirements
 
