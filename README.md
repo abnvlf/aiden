@@ -1,11 +1,11 @@
 ![image](.github/aiden.png)
 
-Multitask operating system with x86_64 ASM
+Multitask operating system with x86_64 ASM.
 
 ## Requirements
 
-Minimum specification for Aiden kernel is:
-- 2 kib of memory
+The minimum specification for the Aiden kernel is:
+- 2 KiB of memory
 
 ## Running and Compile
 
