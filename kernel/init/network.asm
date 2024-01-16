@@ -21,5 +21,5 @@ kernel_init_network:
     jc kernel_panic
 
     call kernel_page_drain
-    mov qword [kernel_network_stack_address], rdi
+    mov qword [kernel_network_port_table], rdi
 .end:

@@ -156,7 +156,7 @@ DRIVER_NIC_I82540EM_TXDMAC 	equ	0x3000	; TX DMA Control
 DRIVER_NIC_I82540EM_TDBAL 	equ	0x3800	; TX Descriptor Base Address Low
 DRIVER_NIC_I82540EM_TDBAH 	equ	0x3804	; TX Descriptor Base Address High
 DRIVER_NIC_I82540EM_TDLEN 	equ	0x3808	; TX Descriptor Length
-DRIVER_NIC_I82540EM_TDLEN_default equ	0x80	; rozmiar przestrzeni kolejki: 128 Bajtów
+DRIVER_NIC_I82540EM_TDLEN_default equ	0x80	; 128
 DRIVER_NIC_I82540EM_TDH equ	0x3810	; TX Descriptor Head
 DRIVER_NIC_I82540EM_TDT equ	0x3818	; TX Descriptor Tail
 DRIVER_NIC_I82540EM_TIDV 	equ	0x3820	; TX Interrupt Delay Value
@@ -191,8 +191,8 @@ driver_nic_i82540em_tx_queue_empty_semaphore db STATIC_TRUE
 driver_nic_i82540em_promiscious_node_semaphore db STATIC_TRUE
 
 
-driver_nic_i82540em_ipv4_address db 192, 168, 0, 4
-driver_nic_i82540em_ipv4_mask db 255, 255, 55, 0
+driver_nic_i82540em_ipv4_address db 192, 168, 0, 64
+driver_nic_i82540em_ipv4_mask db 255, 255, 255, 0
 driver_nic_i82540em_ipv4_gateway db 192, 168, 0, 1
 driver_nic_i82540em_vlan db STATIC_EMPTY
 driver_nic_i82540em_rx_count dq STATIC_EMPTY
@@ -293,9 +293,14 @@ driver_nic_i82540em_irq:
     jne .receive_end
 
 .receive:
+    mov rbx, qword [service_network_pid]
+    test rbx, rbx
+    jz .receive_end
+
     call driver_nic_i82540em_rx_release
-    mov rdi, kernel_network
-    call kernel_thread_exec
+
+    mov ecx, KERNEL_PAGE_SIZE_byte
+    call kernel_ipc_insert
 
 .receive_end:
     mov rsi, qword [driver_nic_i82540em_mmio_base_address]

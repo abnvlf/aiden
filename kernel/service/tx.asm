@@ -10,12 +10,10 @@ struc SERVICE_TX_STRUCTURE_CACHE
 endstruc
 
 service_tx:
-    mov rcx, SERVICE_TX_CACHE_SIZE_page
-    call kernel_memory_alloc
-    jc service_tx
-    call kernel_page_drain_few
-    mov qword [service_tx_cache_address], rdi
-
+    call kernel_task_active
+    mov rax, qword [rdi + KERNEL_STRUCTURE_TASK.pid]
+    mov qword [service_tx_pid], rax
+    
 .reload:
     mov byte [service_tx_semaphore], STATIC_FALSE
     mov rsi, qword [service_tx_cache_address]
