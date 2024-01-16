@@ -31,12 +31,9 @@ DRIVER_NIC_I82540EM_FCAL equ 0x0028	; Flow Control Address Low
 DRIVER_NIC_I82540EM_FCAH equ 0x002C	; Flow Control Address High
 DRIVER_NIC_I82540EM_FCT equ	0x0030	; Flow Control Type
 DRIVER_NIC_I82540EM_VET	equ	0x0038	; VLAN Ether Type
-DRIVER_NIC_I82540EM_ICR	equ	0x00C0	; Interrupt Cause Read
-DRIVER_NIC_I82540EM_ICR_TXDW equ 0	; Transmit Descriptor Written Back
-DRIVER_NIC_I82540EM_ICR_TXQE equ 1	; Transmit Queue Empty
-DRIVER_NIC_I82540EM_ICR_RXO	equ	6	; Receiver Overrun
-DRIVER_NIC_I82540EM_ICR_RXT0 equ 7	; Receiver Timer Interrupt
-DRIVER_NIC_I82540EM_ICR_SRPD equ 16	; Small Receive Packet Detected
+DRIVER_NIC_I82540EM_register equ 0x00C0 ; interrupt cause read
+DRIVER_NIC_I82540EM_ICR_register_flag_TXQE equ 1 ; transmit queue empty
+DRIVER_NIC_I82540EM_ICR_register_flag_RXT0 equ 7 ; receiver timer interrupt
 DRIVER_NIC_I82540EM_ITR	equ	0x00C4	; Interrupt Throttling Register
 DRIVER_NIC_I82540EM_ICS	equ	0x00C8	; Interrupt Cause Set Register
 DRIVER_NIC_I82540EM_IMS	equ	0x00D0	; Interrupt Mask Set/Read Register
@@ -167,10 +164,10 @@ DRIVER_NIC_I82540EM_RXCSUM 	equ	0x5000	; RX Checksum Control
 DRIVER_NIC_I82540EM_MTA equ	0x5200	; Multicast Table Array
 DRIVER_NIC_I82540EM_RA equ	0x5400	; Receive Address
 
-DRIVER_NIC_I82540EM_EEPROM_MANAGEMENT_CONTROL_ENABLE_ARP_RESPONSE	equ	1000000000000000b
-
-DRIVER_NIC_I82540EM_CTRL_RDESC_STATUS_DD_bit	equ	0
-DRIVER_NIC_I82540EM_CTRL_RDESC_STATUS_EOP_bit	equ	1
+DRIVER_NIC_I82540EM_IP4AT_ADDR0 equ 0x5840
+DRIVER_NIC_I82540EM_IP4AT_ADDR1 equ 0x5848
+DRIVER_NIC_I82540EM_IP4AT_ADDR2 equ 0x5850
+DRIVER_NIC_I82540EM_IP4AT_ADDR3 equ 0x5858
 
 struc DRIVER_NIC_I82540EM_STRUCTURE_RCTL_DESC_entry
     .base_address resb 8
@@ -188,7 +185,7 @@ driver_nic_i82540em_tx_base_address dq STATIC_EMPTY
 driver_nic_i82540em_mac_address dq STATIC_EMPTY
 
 driver_nic_i82540em_tx_queue_empty_semaphore db STATIC_TRUE
-driver_nic_i82540em_promiscious_node_semaphore db STATIC_TRUE
+driver_nic_i82540em_promiscious_mode_semaphore db STATIC_FALSE
 
 
 driver_nic_i82540em_ipv4_address db 192, 168, 0, 64
@@ -232,7 +229,7 @@ driver_nic_i82540em_transfer:
 
     mov rax, qword [driver_nic_i82540em_mmio_base_address]
     mov dword [rax + DRIVER_NIC_I82540EM_TDH], 0x00
-    mov dword [rax + DRIVER_NIC_I82540EM_TDT], 0x10
+    mov dword [rax + DRIVER_NIC_I82540EM_TDT], 0x01
 
 .status:
     mov rax, DRIVER_NIC_I82540EM_TDESC_STATUS_DD
@@ -245,52 +242,34 @@ driver_nic_i82540em_transfer:
 
 driver_nic_i82540em_irq:
     push rax
+    push rbx
     push rcx
+    push rdx
     push rsi
     pushf
 
     mov rsi, qword [driver_nic_i82540em_mmio_base_address]
-    mov eax, dword [rsi + DRIVER_NIC_I82540EM_ICR]
-    bt eax, DRIVER_NIC_I82540EM_ICR_RXT0
-    jc .incoming
+    mov eax, dword [rsi + DRIVER_NIC_I82540EM_ICR_register]
 
-    bt eax, DRIVER_NIC_I82540EM_ICR_SRPD
-    jc .end
+    bt eax, DRIVER_NIC_I82540EM_ICR_register_flag_TXQE
+    jnc .no_txqe
 
-    bt eax, DRIVER_NIC_I82540EM_ICR_TXQE
-    jnc .tx_not_empty
 
     mov byte [driver_nic_i82540em_tx_queue_empty_semaphore], STATIC_TRUE
 
-.tx_not_empty:
-    bt eax, DRIVER_NIC_I82540EM_ICR_RXO
+.no_txqe:
+    bt eax, DRIVER_NIC_I82540EM_ICR_register_flag_RXT0
     jnc .end
 
-    xchg bx, bx
-
-    nop
-    nop
-    nop
-    jmp .end
-
-.incoming:
-    inc qword [driver_nic_i82540em_rx_count]
-    inc qword [kernel_network_rx_count]
+    mov rbx, qword [service_network_pid]
+    test rbx, rbx
+    jz .end
     mov rsi, qword [driver_nic_i82540em_rx_base_address]
-    mov rsi, qword [rsi]
-    cmp byte [driver_nic_i82540em_promiscious_node_semaphore], STATIC_TRUE
-    je .receive
-
-    mov eax, dword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.target + KERNEL_NETWORK_STRUCTURE_MAC.2]
-    shl rax, STATIC_MOVE_AX_TO_HIGH_shift
-    or ax, word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.target]
-
-    mov rcx, KERNEL_NETWORK_MAC_mask
-    cmp rax, rcx
-    jc .receive
-
-    cmp rax, qword [driver_nic_i82540em_mac_address]
-    jne .receive_end
+    movzx ecx, word [rsi + DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry.length]
+    mov rsi, qword [rsi + DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry.base_address]
+    
+    call driver_nic_i82540em_rx_release
+    call kernel_ipc_insert
 
 .receive:
     mov rbx, qword [service_network_pid]
@@ -302,17 +281,17 @@ driver_nic_i82540em_irq:
     mov ecx, KERNEL_PAGE_SIZE_byte
     call kernel_ipc_insert
 
-.receive_end:
-    mov rsi, qword [driver_nic_i82540em_mmio_base_address]
-    mov dword [rsi + DRIVER_NIC_I82540EM_RDH], STATIC_EMPTY
-    mov dword [rsi + DRIVER_NIC_I82540EM_RDT], STATIC_EMPTY
-
 .end:
+    mov rsi, qword [driver_nic_i82540em_mmio_base_address]
+    mov dword [rsi + DRIVER_NIC_I82540EM_RDH], 0x00
+    mov dword [rsi + DRIVER_NIC_I82540EM_RDT], 0x01
+
     mov rax, qword [kernel_apic_base_address]
     mov dword [rax + KERNEL_APIC_EOI_register], STATIC_EMPTY
     popf
     pop rsi
     pop rcx
+    pop rbx
     pop rax
 
     iretq
@@ -370,7 +349,7 @@ driver_nic_i82540em:
     shr eax, STATIC_MOVE_HIGH_TO_AX_shift
     mov word [driver_nic_i82540em_mac_address + KERNEL_NETWORK_STRUCTURE_MAC.4], ax
     mov dword [rsi + DRIVER_NIC_I82540EM_IMC], STATIC_MAX_unsigned
-    mov eax, dword [rsi + DRIVER_NIC_I82540EM_ICR]
+    mov eax, dword [rsi + DRIVER_NIC_I82540EM_ICR_register]
 
     call driver_nic_i82540em_setup
 
@@ -395,11 +374,9 @@ driver_nic_i82540em_setup:
 
     mov dword [rsi + DRIVER_NIC_I82540EM_RDLEN], DRIVER_NIC_I82540EM_RDLEN_default
     mov dword [rsi + DRIVER_NIC_I82540EM_RDH], 0x00
-    mov dword [rsi + DRIVER_NIC_I82540EM_RDT], 0x00
+    mov dword [rsi + DRIVER_NIC_I82540EM_RDT], 0x01
 
-    mov ecx, DRIVER_NIC_I82540EM_RDLEN_default
-    call library_page_from_size
-    call kernel_memory_alloc
+    call kernel_memory_alloc_page
 
     mov rax, qword [driver_nic_i82540em_rx_base_address]
     mov qword [rax], rdi

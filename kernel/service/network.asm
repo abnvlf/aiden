@@ -162,7 +162,7 @@ service_network_port_table dq STATIC_EMPTY
 service_network_stack_address dq STATIC_EMPTY
 
 service_network_ipc_message:
-	times KERNEL_IPC_STRUCTURE_LIST.SIZE		db	STATIC_EMPTY
+	times	KERNEL_IPC_STRUCTURE_LIST.SIZE		db	STATIC_EMPTY
 
 service_network:
 	xor ebp, ebp
@@ -176,7 +176,7 @@ service_network:
   jc .loop
 
   mov rcx, qword [rdi + KERNEL_IPC_STRUCTURE_LIST.size]
-  mov rsi, qword [rdi + KERNEL_STRUCTURE_LIST.pointer]
+  mov rsi, qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]
 
   cmp word [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.type], SERVICE_NETWORK_FRAME_ETHERNET_TYPE_arp
   je service_network_arp
