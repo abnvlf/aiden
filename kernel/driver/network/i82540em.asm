@@ -195,6 +195,85 @@ driver_nic_i82540em_vlan db STATIC_EMPTY
 driver_nic_i82540em_rx_count dq STATIC_EMPTY
 driver_nic_i82540em_tx_count dq STATIC_EMPTY
 
+driver_nic_i82540em_irq:
+    push rax
+	push rbx
+	push rcx
+	push rdx
+	push rsi
+	pushf
+
+    mov rsi, qword [driver_nic_i85240em_mmio_base_address]
+    mov eax, dword [rsi + DRIVER_NIC_I82540EM_ICR_register]
+
+%ifdef DEBUG
+    push rcx
+    push rsi
+    mov ecx, kernel_debug_string_irq_end - kernel_debug_string_irq
+    mov rsi, kernel_debug_string_irq
+    call kernel_video_string
+    pop rsi
+    pop rcx
+%endif
+    bt eax, DRIVER_NIC_I82540EM_ICR_register_flag_TXQE
+    jnc .no_txqe
+    
+    mov byte [driver_nic_i82540em_tx_queue_empty_semaphore], STATIC_TRUE
+
+%ifdef DEBUG
+    push rcx
+    push rsi
+    mov ecx, kernel_debug_string_tx_empty_end - kernel_debug_string_tx_empty
+    mov rsi, kernel_debug_string_tx_empty
+    call kernel_video_string
+    pop rsi
+    pop rcx
+%endif
+    jmp .end
+
+.no_txqe:
+    bt eax, DRIVER_NIC_I82540EM_ICR_register_flag_RXT0
+    jnc .received
+
+%ifdef DEBUG
+    push rcx
+    push rsi
+    mov ecx, kernel_debug_string_rx_end - kernel_debug_string_rx
+    mov rsi, kernel_debug_string_rx
+    call kernel_video_string
+    pop rsi
+    pop rcx
+%endif
+    mov rbx, qword [service_network_pid]
+    test rbx, rvx
+    jz .received
+
+    mov rsi, qword [driver_nic_i82540em_rx_base_address]
+    movzx ecx, qword [rsi + DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry.length]
+    mov rsi, qword [rsi + DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry.base_address]
+
+    call driver_nic_i82540em_rx_release
+    call kernel_ipc_insert
+
+.received:
+    mov rsi, qword [driver_nic_i82540em_mmio_base_address]
+    mov dword [rsi + DRIVER_NIC_I82540EM_RDH], 0x00
+    mov dword [rsi + DRIVER_NIC_I82540EM_RDT], 0x01
+
+.end:
+    mov rax, qword [kernel_apic_base_address]
+    mov dword [rax + KERNEL_APIC_EOI_register], STATIC_EMPTY
+
+    popf
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+
+    iretq
+
+    macro_debug "driver_nic_i82540em_irq"
 
 driver_nic_i82540em_rx_release:
     push rax
@@ -240,62 +319,6 @@ driver_nic_i82540em_transfer:
     pop rsi
     ret
 
-driver_nic_i82540em_irq:
-    push rax
-    push rbx
-    push rcx
-    push rdx
-    push rsi
-    pushf
-
-    mov rsi, qword [driver_nic_i82540em_mmio_base_address]
-    mov eax, dword [rsi + DRIVER_NIC_I82540EM_ICR_register]
-
-    bt eax, DRIVER_NIC_I82540EM_ICR_register_flag_TXQE
-    jnc .no_txqe
-
-
-    mov byte [driver_nic_i82540em_tx_queue_empty_semaphore], STATIC_TRUE
-
-.no_txqe:
-    bt eax, DRIVER_NIC_I82540EM_ICR_register_flag_RXT0
-    jnc .end
-
-    mov rbx, qword [service_network_pid]
-    test rbx, rbx
-    jz .end
-    mov rsi, qword [driver_nic_i82540em_rx_base_address]
-    movzx ecx, word [rsi + DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry.length]
-    mov rsi, qword [rsi + DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry.base_address]
-    
-    call driver_nic_i82540em_rx_release
-    call kernel_ipc_insert
-
-.receive:
-    mov rbx, qword [service_network_pid]
-    test rbx, rbx
-    jz .receive_end
-
-    call driver_nic_i82540em_rx_release
-
-    mov ecx, KERNEL_PAGE_SIZE_byte
-    call kernel_ipc_insert
-
-.end:
-    mov rsi, qword [driver_nic_i82540em_mmio_base_address]
-    mov dword [rsi + DRIVER_NIC_I82540EM_RDH], 0x00
-    mov dword [rsi + DRIVER_NIC_I82540EM_RDT], 0x01
-
-    mov rax, qword [kernel_apic_base_address]
-    mov dword [rax + KERNEL_APIC_EOI_register], STATIC_EMPTY
-    popf
-    pop rsi
-    pop rcx
-    pop rbx
-    pop rax
-
-    iretq
-    macro_debug "driver_nic_i82540em_irq"
 
 driver_nic_i82540em:
     push rax
