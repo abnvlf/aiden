@@ -6,13 +6,13 @@ KERNEL_VIDEO_CHAR_SIZE_byte equ	0x02
 KERNEL_VIDEO_LINE_SIZE_byte equ	KERNEL_VIDEO_WIDTH_char * KERNEL_VIDEO_CHAR_SIZE_byte
 KERNEL_VIDEO_SIZE_byte equ KERNEL_VIDEO_LINE_SIZE_byte * KERNEL_VIDEO_HEIGHT_char
 
-kernel_video_width				dq	KERNEL_VIDEO_WIDTH_char
-kernel_video_height				dq	KERNEL_VIDEO_HEIGHT_char
-kernel_video_char_size_byte			dq	KERNEL_VIDEO_CHAR_SIZE_byte
-kernel_video_line_size_byte			dq	KERNEL_VIDEO_LINE_SIZE_byte
-kernel_video_size_byte				dq	KERNEL_VIDEO_LINE_SIZE_byte * KERNEL_VIDEO_HEIGHT_char
+kernel_video_width	dq	KERNEL_VIDEO_WIDTH_char
+kernel_video_height	dq	KERNEL_VIDEO_HEIGHT_char
+kernel_video_char_size_byte	dq	KERNEL_VIDEO_CHAR_SIZE_byte
+kernel_video_line_size_byte	dq	KERNEL_VIDEO_LINE_SIZE_byte
+kernel_video_size_byte	dq	KERNEL_VIDEO_LINE_SIZE_byte * KERNEL_VIDEO_HEIGHT_char
 
-kernel_video_pointer				dq	KERNEL_VIDEO_BASE_address
+kernel_video_pointer dq	KERNEL_VIDEO_BASE_address
 kernel_video_cursor:
 	.x:	dd	STATIC_EMPTY
 	.y:	dd	STATIC_EMPTY
@@ -66,6 +66,8 @@ kernel_video_cursor_set:
     mul dword [kernel_video_cursor + STATIC_DWORD_SIZE_byte]
     add eax, dword [kernel_video_cursor]
 
+    push rax
+
     mov cx, ax
 
     mov al, 0x0F
@@ -77,13 +79,18 @@ kernel_video_cursor_set:
     out dx, al
 
     mov al, 0x0E
-
     dec dx
     out dx, al
     
     inc dx
     mov al, ch
     out dx, al
+
+    pop rax
+
+    shl rax, STATIC_MULTIPLE_BY_2_shift
+    add rax, KERNEL_VIDEO_BASE_address
+    mov qword [kernel_video_pointer], rax
 
     pop rdx
     pop rcx

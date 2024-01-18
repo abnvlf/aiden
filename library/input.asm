@@ -1,79 +1,84 @@
 library_input:
-    push rax
+	push rax
 	push rbx
 	push rsi
 	push rcx
 
-    cmp rbx, STATIC_EMPTY
-    je .loop
+	cmp	rbx, STATIC_EMPTY
+	je	.loop
 
-    mov rcx, rbx
-    call kernel_video_string
+	mov	rcx, rbx
+	call kernel_video_string
 
-    mov rcx, qword [rsp]
-    sub rcx, rbx
-    add rsi, rbx
+	mov	rcx, qword [rsp]
+
+	sub	rcx, rbx
+	add	rsi, rbx
 
 .loop:
-    call driver_ps2_keyboard_read
-    jz .loop
+	call	driver_ps2_keyboard_read
+	jz	.loop
 
-    cmp ax, STATIC_ASCII_BACKSPACE
-    je .key_backspace
+	cmp	ax,	STATIC_ASCII_BACKSPACE
+	je	.key_backspace
 
-    cmp ax, STATIC_ASCII_ENTER
-    je .key_enter
+	cmp	ax,	STATIC_ASCII_ENTER
+	je	.key_enter
 
-    cmp ax, STATIC_ASCII_ESCAPE
-    je .empty
+	cmp	ax,	STATIC_ASCII_ESCAPE
+	je	.empty
 
-    cmp rax, STATIC_ASCII_SPACE
-    jb .loop
-    cmp rax, STATIC_ASCII_TILDE
-    ja .loop
+	cmp	rax, STATIC_ASCII_SPACE
+	jb	.loop
+	cmp	rax, STATIC_ASCII_TILDE
+	ja	.loop
 
-    cmp rcx, STATIC_EMPTY
-    je .loop
+	cmp	rcx, STATIC_EMPTY
+	je	.loop
+	mov	byte [rsi + rbx],	al
+	inc	rbx
 
-    mov byte [rsi + rbx], al
-    inc rbx
-
-    dec rcx
+	dec	rcx
 
 .print:
-    push rcx
+	push rcx
 
-    mov ecx, 0x01
-    call kernel_video_char
+	mov	ecx, 0x01
+	call kernel_video_char
 
-    pop rcx
-    jmp .loop
+	pop	rcx
+
+	jmp	.loop
 
 .key_backspace:
-    test rbx, rbx
-    jz .loop
-    
-    dec rbx
-    inc rcx
-    dec rsi
+	test	rbx,	rbx
+	jz	.loop
 
-    jmp .print
+	dec	rbx
+
+	inc	rcx
+
+	jmp	.print
 
 .key_enter:
-    test rbx, rbx
-    jz .empty
+	test rbx, rbx
+	jz	.empty
 
-    mov qword [rsp], rbx
-    clc
-    jmp .end
+	mov	qword [rsp], rbx
+
+	clc
+
+	jmp	.end
 
 .empty:
-    stc
+	stc
 
 .end:
-    pop	rcx
+	pop	rcx
 	pop	rsi
 	pop	rbx
 	pop	rax
 
-    ret
+	ret
+
+	macro_debug	"library_input"
