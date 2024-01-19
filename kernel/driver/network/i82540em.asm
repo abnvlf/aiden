@@ -195,6 +195,13 @@ driver_nic_i82540em_vlan db STATIC_EMPTY
 driver_nic_i82540em_rx_count dq STATIC_EMPTY
 driver_nic_i82540em_tx_count dq STATIC_EMPTY
 
+driver_nic_i82540em_string db STATIC_COLOR_ASCII_GREEN_LIGHT, "::", STATIC_COLOR_ASCII_DEFAULT, " Network controller: ", STATIC_ASCII_NEW_LINE, " Intel 82540EM, MAC", STATIC_COLOR_ASCII_WHITE
+driver_nic_i82540em_string_end:
+
+driver_nic_i82540em_string_irq db STATIC_COLOR_ASCII_DEFAULT, ", IRQ ", STATIC_COLOR_ASCII_WHITE
+driver_nic_i82540em_string_irq_end:
+
+; interrupt service routine for i82540em NIC driver
 driver_nic_i82540em_irq:
     push rax
 	push rbx
@@ -206,46 +213,19 @@ driver_nic_i82540em_irq:
     mov rsi, qword [driver_nic_i85240em_mmio_base_address]
     mov eax, dword [rsi + DRIVER_NIC_I82540EM_ICR_register]
 
-%ifdef DEBUG
-    push rcx
-    push rsi
-    mov ecx, kernel_debug_string_irq_end - kernel_debug_string_irq
-    mov rsi, kernel_debug_string_irq
-    call kernel_video_string
-    pop rsi
-    pop rcx
-%endif
     bt eax, DRIVER_NIC_I82540EM_ICR_register_flag_TXQE
     jnc .no_txqe
     
     mov byte [driver_nic_i82540em_tx_queue_empty_semaphore], STATIC_TRUE
 
-%ifdef DEBUG
-    push rcx
-    push rsi
-    mov ecx, kernel_debug_string_tx_empty_end - kernel_debug_string_tx_empty
-    mov rsi, kernel_debug_string_tx_empty
-    call kernel_video_string
-    pop rsi
-    pop rcx
-%endif
     jmp .end
 
 .no_txqe:
     bt eax, DRIVER_NIC_I82540EM_ICR_register_flag_RXT0
     jnc .received
 
-%ifdef DEBUG
-    push rcx
-    push rsi
-    mov ecx, kernel_debug_string_rx_end - kernel_debug_string_rx
-    mov rsi, kernel_debug_string_rx
-    call kernel_video_string
-    pop rsi
-    pop rcx
-%endif
     mov rbx, qword [service_network_pid]
-    test rbx, rvx
+    test rbx, rbx
     jz .received
 
     mov rsi, qword [driver_nic_i82540em_rx_base_address]
@@ -282,10 +262,13 @@ driver_nic_i82540em_rx_release:
     call kernel_memory_alloc_page
     jc .end
     mov qword [rax + DRIVER_NIC_I82540EM_TDESC_BASE_ADDRESS], rdi
+
 .end:
     pop rdi
     pop rax
     ret
+
+    macro_debug "driver_nic_i82540em_rx_release"
 
 driver_nic_i82540em_transfer:
     push rsi
@@ -318,6 +301,8 @@ driver_nic_i82540em_transfer:
     pop rax
     pop rsi
     ret
+
+    macro_debug "driver_nic_i82540em_transfer"
 
 
 driver_nic_i82540em:
@@ -376,13 +361,51 @@ driver_nic_i82540em:
 
     call driver_nic_i82540em_setup
 
+    mov ecx, driver_nic_i82540em_string_end - driver_nic_i82540em_string
+    mov rsi, driver_nic_i82540em_string
+    call kernel_video_string
+
+    mov bl, STATIC_NUMBER_SYSTEM_hexadecimal
+    xor cl, cl
+    mov dl, 6
+    mov rsi, driver_nic_i82540em_mac_address
+
+.mac:
+    lodsb
+
+    call kernel_video_number
+    dec dl
+    jz .end
+
+    mov eax, STATIC_ASCII_COLON
+    mov cl, 1
+    call kernel_video_char
+
+    jmp .mac
+
+.end:
+    mov ecx, driver_nic_i82540em_string_irq_end - driver_nic_i82540em_string_irq
+    mov rsi, driver_nic_i82540em_string_irq
+    call kernel_video_string
+
+    movzx eax, byte [driver_nic_i82540em_irq_number]
+    mov bl, STATIC_NUMBER_SYSTEM_decimal
+    xor ecx, ecx
+    call kernel_video_number
+
+    mov eax, STATIC_ASCII_NEW_LINE
+    mov cl, 1
+    call kernel_video_char
+
     pop r11
     pop rdi
     pop rsi
     pop rcx
     pop rbx
     pop rax
+
     ret
+    macro_debug "driver_nic_i82540em"
 
 driver_nic_i82540em_setup:
     push rax
@@ -459,3 +482,5 @@ driver_nic_i82540em_setup:
     pop rdi
     pop rax
     ret
+
+    macro_debug "driver_nic_i82540em_setup"

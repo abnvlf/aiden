@@ -6,10 +6,18 @@ DRIVER_PCI_REGISTER_status_and_command	equ	0x04
 DRIVER_PCI_REGISTER_class_and_subclass	equ	0x08
 DRIVER_PCI_REGISTER_bar0 equ 0x10
 DRIVER_PCI_REGISTER_bar1 equ 0x14
-DRIVER_PCI_REGISTER_irq	equ	0x3C
+DRIVER_PCI_REGISTER_bar2 equ 0x18
+DRIVER_PCI_REGISTER_bar3 equ 0x1C
+DRIVER_PCI_REGISTER_bar4 equ 0x20
+DRIVER_PCI_REGISTER_bar5 equ 0x24
+DRIVER_PCI_REGISTER_irq	 equ 0x3C
 DRIVER_PCI_REGISTER_FLAG_64_bit	 equ 00000010b
 
-DRIVER_PCI_CLASS_SUBCLASS_network	equ	0x0200
+
+DRIVER_PCI_CLASS_SUBCLASS_ide equ 0x0101
+DRIVER_PCI_CLASS_SUBCLASS_ahci equ 0x0106
+DRIVER_PCI_CLASS_SUBCLASS_scsi equ 0x0107
+DRIVER_PCI_CLASS_SUBCLASS_network equ 0x0200
 
 driver_pci_find_vendor_and_device:
     push rbx
@@ -27,7 +35,7 @@ driver_pci_find_vendor_and_device:
     cmp eax, dword [rsp]
     je .found
 
-    cmp edx, 0x008
+    cmp edx, 0x0008
     jb .next
 
     inc ecx
@@ -62,7 +70,7 @@ driver_pci_find_vendor_and_device:
     ret
 
 driver_pci_find_class_and_subclass:
-    push rax
+    push rbx
     push rcx
     push rdx
     push rax
@@ -109,6 +117,7 @@ driver_pci_find_class_and_subclass:
     pop rax
     pop rdx
     pop rcx
+    pop rbx
     ret
 
 
@@ -154,6 +163,8 @@ driver_pci_write:
     or al, cl
     
     ror eax, 5
+    or al, bl
+    
     rol eax, 16
 
     mov dx, DRIVER_PCI_PORT_command
